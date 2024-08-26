@@ -2,7 +2,7 @@ const router = require("express").Router();
 const User = require("../models/User.model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-// const isAuth = require("../middlewares/isAuth")
+const isAuth = require("../middlewares/isAuth")
 
 router.post("/register", async (req, res, next) => {
 
@@ -32,8 +32,8 @@ router.post("/register", async (req, res, next) => {
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
 
-        await User.create({ username: usernameOk, email, password: hashedPassword })
-        res.status(200).json({ succesMessage: "Usuario creado" })
+        await User.create({ username: usernameOk, email, password: hashedPassword, rol: "admin" })
+        res.json("Usuario creado")
     }
     catch (error) {
         next(error)
@@ -74,12 +74,13 @@ router.post("/login", async (req, res, next) => {
         const payload = {
             _id: foundUser._id,
             username: foundUser.username,
-            email: foundUser.email
+            email: foundUser.email,
+            rol: foundUser.rol
         }
 
-        const authToken = jwt.sign(payload, process.env.SECRET_KEY, { algorithm: "HS256", expiresIn: "4h" })
+        const authToken = jwt.sign(payload, process.env.SECRET, { algorithm: "HS256", expiresIn: "4h" })
 
-        res.json({ authToken, ...payload })
+        res.json({ authToken, id: foundUser._id, username: foundUser.username, email: foundUser.email, rol: foundUser.rol })
     }
     catch (error) {
         next(error)
@@ -88,14 +89,14 @@ router.post("/login", async (req, res, next) => {
 
 })
 
-// router.get("/verify", isAuth, async (req, res, next) => {
-//     try {
-//         res.json(req.payload)
-//     }
-//     catch (error) {
-//         next(error)
-//     }
-// })
+router.get("/verify", isAuth, async (req, res, next) => {
+    try {
+        res.json(req.payload)
+    }
+    catch (error) {
+        next(error)
+    }
+})
 
 
 module.exports = router

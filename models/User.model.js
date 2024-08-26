@@ -20,7 +20,17 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: true
-    }
+    },
+    rol: {
+      type: String,
+      required: true,
+      default: "customer",
+      enum: ["customer", "admin"]
+    },
+    purchases: [{
+      type: Schema.Types.ObjectId,
+      ref: "Product"
+    }]
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`    
