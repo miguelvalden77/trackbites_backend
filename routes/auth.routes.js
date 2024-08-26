@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 // const isAuth = require("../middlewares/isAuth")
 
-router.post("/signup", async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
 
     const { username, email, password } = req.body
     const usernameOk = username.toLowerCase().trim()
@@ -33,18 +33,19 @@ router.post("/signup", async (req, res, next) => {
         const hashedPassword = await bcrypt.hash(password, salt)
 
         await User.create({ username: usernameOk, email, password: hashedPassword })
-        res.json("Usuario creado")
+        res.status(200).json({ succesMessage: "Usuario creado" })
     }
     catch (error) {
         next(error)
+        res.status(400).json({ errorMessage: "Usuario no creado" })
     }
 
 })
 
 router.post("/login", async (req, res, next) => {
 
-    const { username, password } = req.body
-    const usernameOk = username.toLowerCase().trim()
+    const { email, password } = req.body
+    const usernameOk = email.toLowerCase().trim()
 
     let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,20}$/
     if (passwordRegex.test(password) === false) {
@@ -52,13 +53,13 @@ router.post("/login", async (req, res, next) => {
         return
     }
 
-    if (!username || !password) {
+    if (!email || !password) {
         res.status(400).json({ errorMessage: "Debes rellenar todos los campos" })
         return
     }
 
     try {
-        const foundUser = await User.findOne({ username: usernameOk })
+        const foundUser = await User.findOne({ email: usernameOk })
         if (foundUser === null) {
             res.status(400).json({ errorMessage: "No hay ningún usuario con ese username" })
             return
@@ -78,10 +79,11 @@ router.post("/login", async (req, res, next) => {
 
         const authToken = jwt.sign(payload, process.env.SECRET_KEY, { algorithm: "HS256", expiresIn: "4h" })
 
-        res.json({ authToken: authToken })
+        res.json({ authToken, ...payload })
     }
     catch (error) {
         next(error)
+        res.status(400).json({ errorMessage: "Error, usuario no logueado", error })
     }
 
 })
